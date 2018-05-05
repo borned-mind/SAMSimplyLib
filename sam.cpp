@@ -10,8 +10,8 @@ namespace SAM{
 				
 				last_result=answ["RESULT"];
 
-
-				if(answ["RESULT"] != "OK") 
+			
+				if(answ["RESULT"] != "OK" && answ["RESULT"] != "OK\n") 
 					Util::throw_error("ERROR: Result is not ok, is "+answ["RESULT"]);
 
 				return true;
@@ -77,9 +77,7 @@ namespace SAM{
 			auto answ = send_command(comm, l,
 				(connections[NameConn].get())->getSock()	);
 
-			for(auto a : answ){
-				std::cout << a.first << "=" << a.second << std::endl;
-			}
+		
 
 			return ifner(answ);	
 	}
@@ -130,6 +128,8 @@ namespace SAM{
 
 	bool SAM::isSAM(int sock) {
 				auto list = send_command( "HELLO VERSION", {}, sock );
+				//for(auto l : list)std::cout << l.first << "=" << l.second << std::endl;
+				
 				if( !ifner(list) ) return false;
 				return true;
 	}
@@ -198,9 +198,10 @@ namespace SAM{
 	SAMConnection::SAMConnection(SockWrap sock){
 			m_main_sock=sock.sock;
 			m_main_sockaddr=sock.addr;
+
 			auto t=SAM("",0,false, false);
 			if( !t.isSAM(m_main_sock) ) 
-				Util::throw_error("Is not SAM");
+				Util::throw_error("#Is not SAM");
 
 			
 	}

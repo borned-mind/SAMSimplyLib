@@ -28,10 +28,12 @@ bool SamSock::wrt(const std::string msg, int sock){
 std::string SamSock::reading(int sock, std::size_t count) noexcept{
 	SOCK_CHECK("");
 
-	char * buf = new char[count]; //calloc(count); is not simillar to malloc as i see; or create in stack char buf[count];
+	char * buf = (char*)calloc(count, 1); 
 	read(sock, buf, count);
-	std::string ret = buf;
+	std::string ret = std::string(buf);
+	std::cout << "Buf is: " << buf << std::endl;
 	delete [] buf;
+	std::cout << "Ret is: " << ret << std::endl;
 	return ret;
 }
 

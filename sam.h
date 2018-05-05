@@ -1,7 +1,7 @@
 #include<map>
 #include"sock.h"
 #include <utility>
-#include<future>
+#include<memory>
 #include<string.h>
 
 
@@ -12,7 +12,7 @@
 
 
 namespace SAM{
-	constexpr std::size_t defDataBlock=5012;
+	constexpr std::size_t defDataBlock=2048;
 
 	//using keys_t = //std::pair<std::string,std::string>; // public, private
 //	enum class type{	};
@@ -48,26 +48,18 @@ namespace SAM{
 		}m_sock;
 */
 		
-		std::string buf;
+
 		public:
-			const decltype(auto) getBuf(void){return (buf); }
-			
+			//const decltype(auto) getBuf(void){return (buf); }
+			SAMConnection operator=(SAMConnection sam){
+				this->m_main_sock=sam.m_main_sock;
+				this->m_main_sockaddr=sam.m_main_sockaddr;
+			}
 			auto getSock(void) -> int{
 
 				return this->m_main_sock;
 			}
 			SAMConnection( SockWrap sock );
-			auto update_buf(void){
-				return std::async(std::launch::async,
-					[this]( ){
-						buf="";
-						std::cout << "Want some" << std::endl;
-						buf=reading( defDataBlock );
-					}
-				);
-				
-			}
-
 	};	
 
 
