@@ -89,7 +89,7 @@ namespace SAM{
 			std::string last_result;
 			//bool session_exist=false;
 			 inline bool ifner(std::map<std::string, std::string>  answ);
-
+			 inline bool send_and_wait(std::string NameConn, std::string comm,  std::initializer_list<command_value> l={});
 		protected:
 			keys_t m_keys;
 
@@ -126,6 +126,7 @@ namespace SAM{
 			
 
 			bool connect_to(std::string dest, std::string ID, std::string NameConn);
+			bool accepting(std::string ID, std::string NameConn);
 
 			SAM(std::string host=defHost,
 				 int port=defPort,

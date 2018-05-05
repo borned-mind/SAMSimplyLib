@@ -55,22 +55,25 @@ namespace SAM{
 			return true;
 	}
 	
-
-	bool SAM::connect_to(std::string dest, std::string ID, std::string NameConn){
-
+	inline bool SAM::send_and_wait(std::string NameConn, std::string comm,  std::initializer_list<command_value> l){
 			auto tmp_sam=	std::make_shared<SAMConnection
 			>(SAMConnection(type_conn::connect, getsock(m_host, m_port)));
 
-			auto answ = send_command("STREAM CONNECT", { {"ID",ID},{"DESTINATION",dest} },
+			auto answ = send_command(comm, l,
 				(tmp_sam.get())->getSock());
 			(tmp_sam.get())->update_buf();
 			connections[NameConn]=tmp_sam;
 
-			return ifner(answ);
-			
+			return ifner(answ);	
+	}
+	
+	bool SAM::connect_to(std::string dest, std::string ID, std::string NameConn){
+			return send_and_wait(NameConn, "STREAM CONNECT", { {"ID",ID},{"DESTINATION",dest}});
 	}
 
-
+	bool SAM::accepting(std::string ID, std::string NameConn){
+			return send_and_wait(NameConn, "STREAM ACCEPT", { {"ID",ID}});
+	}
 
 	keys_t SAM::generate_keys(/*std::string signaturetype*/) {
 	
