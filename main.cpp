@@ -13,8 +13,8 @@ int main(void){
 	
 	try{
 
-		if(! s.init_session("TestingSession26") ) std::cerr << "Can't init session" << std::endl;
-		if( ! s.accepting("TestingSession26", "Acepting_conn") ) std::cerr << "Can't accept" << std::endl;
+		if(! s.init_session("TestingSession27") ) std::cerr << "Can't init session" << std::endl;
+		if( ! s.accepting("TestingSession27", "Acepting_conn") ) std::cerr << "Can't accept" << std::endl;
 		auto ses = *( s.connections["Acepting_conn"].get() );
 		std::cout << "To cycle" << std::endl;
 		while(1){
@@ -23,6 +23,7 @@ int main(void){
 			auto buf = ses.reading(1024);
 			std::cout << "Write buf" << std::endl;
 			std::cout <<  buf << std::endl;
+			ses.wrt("PONG: "+buf);
 		}
 
 
