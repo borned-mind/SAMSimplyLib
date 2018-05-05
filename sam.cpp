@@ -3,9 +3,11 @@
 namespace SAM{
 
 	inline bool SAM::ifner(std::map<std::string, std::string>  answ){
+				
 
 				if( !Util::exists(answ, "RESULT") ) return false;
 
+				
 				last_result=answ["RESULT"];
 
 
@@ -16,10 +18,11 @@ namespace SAM{
 
 	}
 
-	SAM::SAM(std::string host, int port, keys_t keys, bool check_is_sam)
-	:SamSock(host,port), m_keys(keys){
+	SAM::SAM(std::string host, int port, bool check_is_sam, bool con)
+	:SamSock(host,port){
 		try{
-			setsock( getsock(m_host, m_port) );
+			if(con)
+				setsock( getsock(m_host, m_port) );
 			if(check_is_sam)
 				if( !isSAM() ) throw( std::runtime_error("Is not SAM?") );
 
@@ -32,42 +35,56 @@ namespace SAM{
 
 
 	list_args SAM::send_command(std::string  comm,  std::initializer_list<command_value> values, int sock){
-			
+			sock = (sock == 0) ? m_main_sock : sock;
 			for(auto val : values)
 				Util::msg_join( comm, " ", std::get<0>(val),"=",std::get<1>(val) );
-			std::cout << "I will send command: " << comm << std::endl;
+
 			wrt(comm+'\n', sock);
-			std::cout << "Now read" << std::endl;
-			return Util::split( reading(sock, defDataBlock) );	
+
+			return Util::split( reading( sock, defDataBlock) );	
 	}
 
 
 	bool SAM::init_session(std::string ID, std::string type){
-			if(!m_keys.priv.size()) return false;
+			sessions_dests[ID]=generate_keys();
+			
+
+			
 			auto answ = send_command("SESSION CREATE", {
 								{"STYLE",type},
 								{"ID",ID},
-								{"DESTINATION",m_keys.priv}
+								{"DESTINATION", sessions_dests[ID].priv }
 									 } );
-
+			
 			if(!ifner(answ)) return false;
-			sessions_dests[ID]=answ["DESTINATION"];
+			std::cout << "New session ID=" << ID << " was created " << std::endl
+			<< "PUB= " << sessions_dests[ID].pub << std::endl 
+			<< "PRIV= " << sessions_dests[ID].priv << std::endl;
+
+
 			return true;
 	}
 	
 	inline bool SAM::send_and_wait(std::string NameConn, std::string comm,  std::initializer_list<command_value> l){
-			auto tmp_sam=	std::make_shared<SAMConnection
-			>(SAMConnection(type_conn::connect, getsock(m_host, m_port)));
+			
+
+			auto tmp_sock = getsock(m_host, m_port);
+			connections[NameConn]=	std::make_shared<SAMConnection
+			>( SAMConnection(tmp_sock) );
+
+
 
 			auto answ = send_command(comm, l,
-				(tmp_sam.get())->getSock());
-			(tmp_sam.get())->update_buf();
-			connections[NameConn]=tmp_sam;
+				(connections[NameConn].get())->getSock()	);
+
+			for(auto a : answ){
+				std::cout << a.first << "=" << a.second << std::endl;
+			}
 
 			return ifner(answ);	
 	}
 	
-	bool SAM::connect_to(std::string dest, std::string ID, std::string NameConn){
+	bool SAM::connect_to(std::string ID, std::string dest, std::string NameConn){
 			return send_and_wait(NameConn, "STREAM CONNECT", { {"ID",ID},{"DESTINATION",dest}});
 	}
 
@@ -90,28 +107,36 @@ namespace SAM{
 
 	
 
-	void SAM::set_keys(keys_t keys) noexcept{
+	/*void SAM::set_keys(keys_t keys) noexcept{
 		m_keys=keys;
-	}
+	}*/
 
 
 	void SAM::close_connection(void) noexcept{
 		wrt("EXIT\n");
+	
 		close(m_main_sock);
 	}
 
 	SAM::~SAM(void){
 		close_connection();
-		m_keys={};
+		for( auto conn : connections ){
+			(conn.second.get())->wrt("EXIT\n");
+			(conn.second.get())->close_connection();
+		}
+
+		//m_keys={};
 	}
 
+	bool SAM::isSAM(int sock) {
+				auto list = send_command( "HELLO VERSION", {}, sock );
+				if( !ifner(list) ) return false;
+				return true;
+	}
 
 	bool SAM::isSAM(void) {
 
-		auto list = send_command( "HELLO VERSION" );
-		//std::cout << list["RESULT"] << std::endl;
-		if( !ifner(list) ) return false;
-		return true;
+		return isSAM(m_main_sock);
 	
 
 
@@ -160,6 +185,7 @@ namespace SAM{
 		
 		if( connect(tmp_sock, (struct sockaddr*)&tmpsockaddr, sizeof tmpsockaddr) == -1)
 			Util::throw_error("Can't connect to SAM on ", hostaddr, ":", port);
+
 		return {tmpsockaddr, tmp_sock};
 	}
 
@@ -169,26 +195,16 @@ namespace SAM{
 		
 	}
 
-	SAMConnection::SAMConnection(type_conn typ, SockWrap sock){
+	SAMConnection::SAMConnection(SockWrap sock){
+			m_main_sock=sock.sock;
+			m_main_sockaddr=sock.addr;
+			auto t=SAM("",0,false, false);
+			if( !t.isSAM(m_main_sock) ) 
+				Util::throw_error("Is not SAM");
 
-			switch(typ){
-				case type_conn::connect:
-					m_sock.conn=sock.sock;
-					break;
-				case type_conn::accept:
-					m_sock.accept=sock.sock;
-					break;
-				case type_conn::other:
-				default:
-					m_sock.weak=sock.sock;
-					break;
-			}
+			
 	}
 
-	SAMConnection::~SAMConnection(void){
-		if(m_sock.conn != 0) close(m_sock.conn);
-		ELIF(m_sock.accept != 0) close(m_sock.accept);
-		ELIF(m_sock.weak != 0) close(m_sock.weak);
-	}
+	
 
 };

@@ -30,51 +30,44 @@ namespace SAM{
 			std::string pub;
 			std::string priv;
 	};
-
+/*
 	enum class type_conn{
 		connect, accept, other
 	};
-
+*/
 
 	struct SAMConnection : public SamSock {
 		int setsock(SockWrap)   override{}
 		SockWrap getsock(std::string, int) override{}
-		void close_connection() override {}
-
+		void close_connection() override { close (m_main_sock); }
+/*
 		union{
 			int conn;
 			int accept;
 			int weak;
 		}m_sock;
-
+*/
+		
 		std::string buf;
 		public:
 			const decltype(auto) getBuf(void){return (buf); }
-			type_conn getType(void){
-						if(m_sock.conn != 0) return type_conn::connect;
-						ELIF(m_sock.accept != 0) return type_conn::accept;
-						ELIF(m_sock.weak != 0) return type_conn::other;
+			
+			auto getSock(void) -> int{
+
+				return this->m_main_sock;
 			}
-			int & getSock(void){
-				switch( getType() ){
-					case type_conn::connect:
-						return m_sock.conn;
-					case type_conn::accept:
-						return m_sock.accept;
-					return m_sock.weak;
-				}
-			}
-			SAMConnection( type_conn typ, SockWrap sock );
+			SAMConnection( SockWrap sock );
 			auto update_buf(void){
 				return std::async(std::launch::async,
 					[this]( ){
 						buf="";
-						buf=reading(getSock(), defDataBlock);
+						std::cout << "Want some" << std::endl;
+						buf=reading( defDataBlock );
 					}
 				);
 				
 			}
-			~SAMConnection(void);
+
 	};	
 
 
@@ -91,7 +84,7 @@ namespace SAM{
 			 inline bool ifner(std::map<std::string, std::string>  answ);
 			 inline bool send_and_wait(std::string NameConn, std::string comm,  std::initializer_list<command_value> l={});
 		protected:
-			keys_t m_keys;
+			//keys_t m_keys;
 
 		protected:
 
@@ -102,12 +95,14 @@ namespace SAM{
 
 			bool isSAM( void ) ;
 			bool isSAM( std::string host, int port );
-			bool isSAM( int port ) = delete;
+			
 
+		public:
+			bool isSAM(int sock);
 		public:
 			std::map<std::string, keys_t> other_keys;
 			std::map<std::string, std::shared_ptr<SAMConnection> > connections;
-			std::map<std::string, std::string> sessions_dests;
+			std::map<std::string, keys_t> sessions_dests;
 		public:
 			const std::string & getLastResult(void){return last_result;}
 			std::map<std::string, std::string > operator()(std::string comm,  std::initializer_list<command_value> l={}, int sock=0){
@@ -118,23 +113,23 @@ namespace SAM{
 
 
 			keys_t generate_keys(void) ;
-			void set_keys(keys_t keys) noexcept;
+			//void set_keys(keys_t keys) noexcept;
 			void addAnotherKey(std::string name, keys_t key);
 
 
 			bool reconnect(void);
 			
 
-			bool connect_to(std::string dest, std::string ID, std::string NameConn);
+			bool connect_to(std::string ID, std::string dest, std::string NameConn);
 			bool accepting(std::string ID, std::string NameConn);
 
 			SAM(std::string host=defHost,
 				 int port=defPort,
-					 keys_t keys={"",""}, bool check_is_sam=true );
+					  bool check_is_sam=true, bool con=true );
 			~SAM(void);
 			
 		public:
-			keys_t & getKeys(void) noexcept { return m_keys; }
+			//keys_t & getKeys(void) noexcept { return m_keys; }
 		public:
 			bool init_session(std::string ID, std::string type="STREAM");
 

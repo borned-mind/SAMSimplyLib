@@ -18,7 +18,7 @@ namespace Util{
 	}
 
 	list_args split(std::string where, char d=' '){
-
+		std::cout << "Spliting string: " << where << std::endl;
 		std::istringstream tmp(where) ;
 		std::string element;
 		
