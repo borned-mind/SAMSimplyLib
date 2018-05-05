@@ -38,7 +38,7 @@ std::string SamSock::reading(int sock, std::size_t count) noexcept{
 }
 
 std::string SamSock::reading(std::size_t count) noexcept{
-	reading(m_main_sock, count);
+	return reading(m_main_sock, count);
 }
 
 
