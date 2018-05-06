@@ -1,0 +1,12 @@
+compiler=g++
+flags=-fPIC
+all: main.o sam.o sock.o util.o
+	$(compiler) *.o $(flags) -shared -o libSimplySAM.so -lpthread
+main.o: main.cpp
+	$(compiler) $(flags) main.cpp -c
+sam.o: sam.cpp
+	$(compiler) $(flags) sam.cpp -c
+sock.o: sock.cpp
+	$(compiler) $(flags) sock.cpp -c
+util.o: util.cpp
+	$(compiler) $(flags) util.cpp -c
