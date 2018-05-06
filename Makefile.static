@@ -1,9 +1,7 @@
 compiler=g++
 flags=
-all: main.o sam.o sock.o util.o
+all: sam.o sock.o util.o
 	ar rcs libSimplySAM.a *.o
-main.o: main.cpp
-	$(compiler) $(flags) main.cpp -c
 sam.o: sam.cpp
 	$(compiler) $(flags) sam.cpp -c
 sock.o: sock.cpp
